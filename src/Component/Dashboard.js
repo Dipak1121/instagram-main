@@ -5,6 +5,11 @@ import TokenContex from "../contex/TokenContex";
 import axios from "axios";
 import { useRef } from "react";
 import CreatePost from "./CreatePost";
+import LoadingCircle from "./LoadingCircle";
+// import DisplayPost from "./DisplayPost";
+import { Suspense } from "react";
+const LazyDisplayPost = React.lazy(()=>import("./DisplayPost"));
+
 
 const Dashboard = ()=>{
 
@@ -16,7 +21,7 @@ const Dashboard = ()=>{
 
     const[postArr, setPostArr] = useState([]);
 
-    
+    const [updatePost, setUpdatePost] = useState(false);
 
     console.log("Post Array",postArr);
 
@@ -34,12 +39,6 @@ const Dashboard = ()=>{
     useEffect(()=>{
         token && loadAllPosts();
     },[token])
-
-    function handleLike(e){
-        console.log(e.target);
-        e.target.classList.toggle("active");
-
-    }
 
     async function logout(){
         // console.log("Logout");
@@ -73,7 +72,7 @@ const Dashboard = ()=>{
             })
             console.log("Load All Posts",response);
             console.log(response.data.data);
-            setPostArr(response.data.data);
+            setPostArr(response.data.data.reverse());
             
 
         }
@@ -82,31 +81,12 @@ const Dashboard = ()=>{
         }
     }
 
-    async function deletePost(e){
-        console.log("Deleting post", e.currentTarget);
-        let deletePostId = e.currentTarget.id;
-        console.log(deletePostId);
+    
 
-        try{
-            const response = await axios.delete(`https://instagram-express-app.vercel.app/api/post/delete/${deletePostId}`,
-            {
-                headers:{
-                    authorization: `Bearer ${token}`
-                }
-            });
-
-            console.log(response.data.message);
-            loadAllPosts();
-        }
-        catch(err){
-            console.log("Deleting post error", err);
-        }
-        
-    }
-
-    async function createPost(){
+    async function createandUpdatePost(){
         // console.log(componentRef.current);
         // componentRef.current.classList.toggle("hide");
+        console.log(updatePost);
         componentRef.current.classList.toggle("hide");
     }
 
@@ -126,7 +106,7 @@ const Dashboard = ()=>{
                 <i className="fa-solid fa-video"></i>
                 <p>Your Posts</p>
            </div>
-           <div className="icon-title" onClick={createPost}>
+           <div className="icon-title" onClick={createandUpdatePost}>
                 <i className="fa-regular fa-square-plus"></i>
                 <p>Create</p>
            </div>
@@ -145,27 +125,10 @@ const Dashboard = ()=>{
                 postArr.length > 0 &&
                 postArr.map((item, index)=>{
                     return(
-                        <div key={index} className="post">
-                            <div  className="img-div">
-                                <img className="post-image"
-                                src={item.image} alt="Image not Found" />
-                            </div>
-                            <div className="post-access">
-                                <div className="post-access-1">
-                                    <button className="like" onClick={handleLike}><i className="fa-regular fa-heart"></i></button>
-                                    <button className="comment"><i className="fa-regular fa-comment"></i></button>
-                                    <button className="share"><i className="fa-regular fa-share-from-square"></i></button>
-                                </div>
-                                <div className="post-access-2">
-                                    <button className="delete" id={item._id}
-                                    onClick={deletePost}><i className="fa-regular fa-trash-can"></i></button>
-                                </div>
-                                
-                            </div>
-                            <div className="post-text">
-                                <p>{item.text}</p>
-                            </div>
-                        </div>
+                        <Suspense fallback={<LoadingCircle />}>
+                            <LazyDisplayPost item={item} index={index} loadAllPosts={loadAllPosts} key={index} createandUpdatePost={createandUpdatePost} setUpdatePost={setUpdatePost}/>
+                        </Suspense>
+                        
                     )
                 })
             }
@@ -243,7 +206,7 @@ const Dashboard = ()=>{
         </div>
         </div>
         <div className="create-post hide" ref={componentRef}>
-            <CreatePost loadAllPosts={loadAllPosts}/>
+            <CreatePost loadAllPosts={loadAllPosts} updatePost={updatePost} setUpdatePost={setUpdatePost}/>
         </div>
         </div>
     )

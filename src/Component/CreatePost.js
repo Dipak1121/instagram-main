@@ -4,7 +4,7 @@ import TokenContex from "../contex/TokenContex";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
-const CreatePost = ({loadAllPosts})=>{
+const CreatePost = ({loadAllPosts, updatePost, setUpdatePost})=>{
 
     const createPostEle = document.querySelector(".create-post");
 
@@ -43,7 +43,7 @@ const CreatePost = ({loadAllPosts})=>{
         }
         createPostEle.classList.toggle("hide");
         // navigate("/dashboard");
-        loadAllPosts();
+        // loadAllPosts();
 
     }
 
@@ -52,42 +52,66 @@ const CreatePost = ({loadAllPosts})=>{
             return;
         }
 
-        try{
-            const response = await axios.post("https://instagram-express-app.vercel.app/api/post/create",
-            {
-                "text": caption,
-                "image": imgLink
-            },
-            {
-                headers:{
-                    authorization: `Bearer ${token}`
-                }
-            })
-
-            console.log("Create post response", response);
+        if(updatePost){
+            try{
+                const response = await axios.put(`https://instagram-express-app.vercel.app/api/post/update/${updatePost}`,
+                {
+                    "image": imgLink
+                },
+                {
+                    headers:{
+                        authorization: `Bearer ${token}`
+                    }
+                })
+    
+                console.log("Create post response", response);
+            }
+            catch(err){
+                console.log("Create post API error");
+            }
+            setUpdatePost(false);
         }
-        catch(err){
-            console.log("Create post API error");
+        else{
+            try{
+                const response = await axios.post("https://instagram-express-app.vercel.app/api/post/create",
+                {
+                    "text": caption,
+                    "image": imgLink
+                },
+                {
+                    headers:{
+                        authorization: `Bearer ${token}`
+                    }
+                })
+    
+                console.log("Create post response", response);
+            }
+            catch(err){
+                console.log("Create post API error");
+            }
         }
-        
+        loadAllPosts();
+        setUploadFile(null);
+        setCaption("");
 
     }
 
     return(
         <>
-            <h3>Create New Post</h3>
+            <h3 style={{color: "blue"}}>{updatePost ? "Update Post" : "Create New Post"}</h3>
             <p>Select photo from your device</p>
 
-            <form onSubmit={letsUpload}>
-                <input type="file"     
+            <form onSubmit={letsUpload} className="create-post-form">
+                <input type="file"   
                 onChange={implementFileUpload}/>
 
-                <input type="text" placeholder="Write Caption" 
+                <input type="text" placeholder="Write Caption" id="caption"
                 value={caption}
                 onChange={(e)=>setCaption(e.target.value)}/>
                 
                 <button>Upload</button>
             </form>
+
         </>
 
         
